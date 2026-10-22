@@ -10,7 +10,7 @@ const toast = document.getElementById("toast");
 function showToast(message) {
   toast.textContent = message;
   toast.classList.add("show");
-  setTimeout(() => toast.classList.remove("show"), 2000);
+  setTimeout(() => toast.classList.remove("show"), 2200);
 }
 
 async function apiRequest(url, options = {}) {
@@ -34,13 +34,14 @@ function renderList(containerId, items, type) {
   container.innerHTML = "";
 
   if (!items || items.length === 0) {
-    container.innerHTML = '<div class="item"><p>Aucune donnée.</p></div>';
+    container.innerHTML =
+      '<div class="entity-item"><p>Aucune donnée.</p></div>';
     return;
   }
 
   items.forEach((item) => {
     const card = document.createElement("div");
-    card.className = "item";
+    card.className = "entity-item";
 
     if (type === "memory") {
       card.innerHTML = `
@@ -82,6 +83,7 @@ async function loadMemories() {
   try {
     const data = await apiRequest(API.memory);
     renderList("memory-list", data, "memory");
+    document.getElementById("stat-memories").textContent = data.length;
   } catch (error) {
     showToast(error.message);
   }
@@ -91,6 +93,7 @@ async function loadProjects() {
   try {
     const data = await apiRequest(API.projects);
     renderList("project-list", data, "project");
+    document.getElementById("stat-projects").textContent = data.length;
   } catch (error) {
     showToast(error.message);
   }
@@ -100,6 +103,7 @@ async function loadNotes() {
   try {
     const data = await apiRequest(API.notes);
     renderList("note-list", data, "note");
+    document.getElementById("stat-notes").textContent = data.length;
   } catch (error) {
     showToast(error.message);
   }
@@ -109,10 +113,17 @@ async function loadTasks() {
   try {
     const data = await apiRequest(API.tasks);
     renderList("task-list", data, "task");
+    document.getElementById("stat-tasks").textContent = data.length;
   } catch (error) {
     showToast(error.message);
   }
 }
+
+async function refreshAll() {
+  await Promise.all([loadMemories(), loadProjects(), loadNotes(), loadTasks()]);
+}
+
+document.getElementById("refresh-all").addEventListener("click", refreshAll);
 
 document
   .getElementById("memory-form")
@@ -133,7 +144,7 @@ document
       showToast("Mémoire ajoutée");
       event.target.reset();
       document.getElementById("memory-source").value = "user";
-      loadMemories();
+      await loadMemories();
     } catch (error) {
       showToast(error.message);
     }
@@ -156,7 +167,7 @@ document
       });
       showToast("Projet ajouté");
       event.target.reset();
-      loadProjects();
+      await loadProjects();
     } catch (error) {
       showToast(error.message);
     }
@@ -180,7 +191,7 @@ document
       });
       showToast("Note ajoutée");
       event.target.reset();
-      loadNotes();
+      await loadNotes();
     } catch (error) {
       showToast(error.message);
     }
@@ -206,13 +217,10 @@ document
       });
       showToast("Tâche ajoutée");
       event.target.reset();
-      loadTasks();
+      await loadTasks();
     } catch (error) {
       showToast(error.message);
     }
   });
 
-loadMemories();
-loadProjects();
-loadNotes();
-loadTasks();
+refreshAll();

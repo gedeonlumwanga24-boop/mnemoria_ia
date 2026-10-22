@@ -7,108 +7,163 @@
     <link rel="stylesheet" href="/static/styles.css" />
   </head>
   <body>
-    <div class="container">
-      <header>
-        <h1>MNEMORA AI</h1>
-        <p>Assistant personnel de mémoire</p>
-      </header>
+    <div class="app-shell">
+      <aside class="sidebar">
+        <div class="brand">
+          <div class="brand-mark">M</div>
+          <div>
+            <h2>MNEMORA</h2>
+            <span>AI Workspace</span>
+          </div>
+        </div>
 
-      <main class="grid">
-        <section class="card">
-          <h2>Mémoire</h2>
-          <form id="memory-form">
-            <input type="text" id="memory-title" placeholder="Titre" required />
-            <textarea
-              id="memory-content"
-              placeholder="Contenu"
-              required
-            ></textarea>
-            <select id="memory-type">
-              <option value="note">Note</option>
-              <option value="idea">Idée</option>
-              <option value="task">Tâche</option>
-            </select>
-            <input
-              type="text"
-              id="memory-source"
-              value="user"
-              placeholder="Source"
-            />
-            <button type="submit">Ajouter</button>
-          </form>
-          <div id="memory-list" class="list"></div>
+        <nav class="nav">
+          <button class="nav-item active">Dashboard</button>
+          <button class="nav-item">Mémoires</button>
+          <button class="nav-item">Projets</button>
+          <button class="nav-item">Notes</button>
+          <button class="nav-item">Tâches</button>
+        </nav>
+      </aside>
+
+      <main class="main-panel">
+        <header class="topbar">
+          <div>
+            <p class="eyebrow">Vue d’ensemble</p>
+            <h1>MNEMORA AI</h1>
+          </div>
+          <button id="refresh-all" class="primary-btn">Rafraîchir</button>
+        </header>
+
+        <section class="stats-grid">
+          <div class="stat-card">
+            <span class="label">Mémoires</span>
+            <strong id="stat-memories">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="label">Projets</span>
+            <strong id="stat-projects">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="label">Notes</span>
+            <strong id="stat-notes">0</strong>
+          </div>
+          <div class="stat-card">
+            <span class="label">Tâches</span>
+            <strong id="stat-tasks">0</strong>
+          </div>
         </section>
 
-        <section class="card">
-          <h2>Projets</h2>
-          <form id="project-form">
-            <input
-              type="text"
-              id="project-name"
-              placeholder="Nom du projet"
-              required
-            />
-            <textarea
-              id="project-description"
-              placeholder="Description"
-            ></textarea>
-            <select id="project-status">
-              <option value="planned">Planifié</option>
-              <option value="active">Actif</option>
-              <option value="done">Terminé</option>
-            </select>
-            <button type="submit">Créer</button>
-          </form>
-          <div id="project-list" class="list"></div>
-        </section>
+        <section class="panel-grid">
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Mémoire</h3>
+            </div>
+            <form id="memory-form" class="entity-form">
+              <input
+                type="text"
+                id="memory-title"
+                placeholder="Titre"
+                required
+              />
+              <textarea
+                id="memory-content"
+                placeholder="Contenu"
+                required
+              ></textarea>
+              <select id="memory-type">
+                <option value="note">Note</option>
+                <option value="idea">Idée</option>
+                <option value="task">Tâche</option>
+              </select>
+              <input
+                type="text"
+                id="memory-source"
+                value="user"
+                placeholder="Source"
+              />
+              <button type="submit" class="primary-btn">Ajouter</button>
+            </form>
+            <div id="memory-list" class="entity-list"></div>
+          </article>
 
-        <section class="card">
-          <h2>Notes</h2>
-          <form id="note-form">
-            <input
-              type="text"
-              id="note-title"
-              placeholder="Titre de la note"
-              required
-            />
-            <textarea
-              id="note-content"
-              placeholder="Contenu"
-              required
-            ></textarea>
-            <input
-              type="number"
-              id="note-course-id"
-              placeholder="Course ID (optionnel)"
-              min="1"
-            />
-            <button type="submit">Ajouter</button>
-          </form>
-          <div id="note-list" class="list"></div>
-        </section>
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Projets</h3>
+            </div>
+            <form id="project-form" class="entity-form">
+              <input
+                type="text"
+                id="project-name"
+                placeholder="Nom du projet"
+                required
+              />
+              <textarea
+                id="project-description"
+                placeholder="Description"
+              ></textarea>
+              <select id="project-status">
+                <option value="planned">Planifié</option>
+                <option value="active">Actif</option>
+                <option value="done">Terminé</option>
+              </select>
+              <button type="submit" class="primary-btn">Créer</button>
+            </form>
+            <div id="project-list" class="entity-list"></div>
+          </article>
 
-        <section class="card">
-          <h2>Tâches</h2>
-          <form id="task-form">
-            <input type="text" id="task-title" placeholder="Titre" required />
-            <textarea
-              id="task-description"
-              placeholder="Description"
-            ></textarea>
-            <select id="task-status">
-              <option value="todo">À faire</option>
-              <option value="in_progress">En cours</option>
-              <option value="done">Terminé</option>
-            </select>
-            <input
-              type="number"
-              id="task-project-id"
-              placeholder="Project ID"
-              min="1"
-            />
-            <button type="submit">Créer</button>
-          </form>
-          <div id="task-list" class="list"></div>
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Notes</h3>
+            </div>
+            <form id="note-form" class="entity-form">
+              <input
+                type="text"
+                id="note-title"
+                placeholder="Titre de la note"
+                required
+              />
+              <textarea
+                id="note-content"
+                placeholder="Contenu"
+                required
+              ></textarea>
+              <input
+                type="number"
+                id="note-course-id"
+                placeholder="Course ID (optionnel)"
+                min="1"
+              />
+              <button type="submit" class="primary-btn">Ajouter</button>
+            </form>
+            <div id="note-list" class="entity-list"></div>
+          </article>
+
+          <article class="panel">
+            <div class="panel-header">
+              <h3>Tâches</h3>
+            </div>
+            <form id="task-form" class="entity-form">
+              <input type="text" id="task-title" placeholder="Titre" required />
+              <textarea
+                id="task-description"
+                placeholder="Description"
+              ></textarea>
+              <select id="task-status">
+                <option value="todo">À faire</option>
+                <option value="in_progress">En cours</option>
+                <option value="done">Terminé</option>
+              </select>
+              <input
+                type="number"
+                id="task-project-id"
+                placeholder="Project ID"
+                min="1"
+              />
+              <button type="submit" class="primary-btn">Créer</button>
+            </form>
+            <div id="task-list" class="entity-list"></div>
+          </article>
         </section>
       </main>
     </div>
