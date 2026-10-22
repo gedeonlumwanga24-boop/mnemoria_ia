@@ -1,4 +1,9 @@
+from pathlib import Path
+
 from fastapi import Depends, FastAPI, HTTPException, status
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy.orm import Session
 
 from app.crud import (
@@ -9,20 +14,28 @@ from app.crud import (
     create_project,
     create_task,
     delete_course,
+    delete_memory_entry,
     delete_note,
     delete_project,
     delete_task,
     get_course,
+    get_memory_entry,
     get_note,
     get_project,
+    get_project_summary,
     get_task,
     list_courses,
     list_memory_entries,
+    list_memory_relations,
+    list_memory_relations_for_entry,
     list_notes,
+    list_notes_by_course,
     list_projects,
     list_tasks,
+    list_tasks_by_project,
     search_memory_entries,
     update_course,
+    update_memory_entry,
     update_note,
     update_project,
     update_task,
@@ -42,6 +55,7 @@ from app.schemas import (
     NoteUpdate,
     ProjectCreate,
     ProjectRead,
+    ProjectSummary,
     ProjectUpdate,
     TaskCreate,
     TaskRead,
@@ -49,9 +63,26 @@ from app.schemas import (
 )
 
 
+BASE_DIR = Path(__file__).resolve().parent
+
 app = FastAPI(title="MNEMORA AI", version="0.1.0")
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
+
 init_db()
+
+
+@app.get("/")
+def serve_frontend():
+    return FileResponse(BASE_DIR / "static" / "index.html")
 
 
 @app.get("/health")
@@ -77,12 +108,50 @@ def search_memory(query: str, db: Session = Depends(get_db)):
     return search_memory_entries(db, query)
 
 
+@app.get("/memory/relations/", response_model=list[MemoryRelationRead])
+def get_memory_relations(db: Session = Depends(get_db)):
+    return list_memory_relations(db)
+
+
+@app.get("/memory/{memory_id}", response_model=MemoryEntryRead)
+def get_memory_detail(memory_id: int, db: Session = Depends(get_db)):
+    item = get_memory_entry(db, memory_id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memory item not found")
+    return item
+
+
+@app.put("/memory/{memory_id}", response_model=MemoryEntryRead)
+def edit_memory_entry(memory_id: int, payload: MemoryEntryCreate, db: Session = Depends(get_db)):
+    item = update_memory_entry(db, memory_id, payload)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memory item not found")
+    return item
+
+
+@app.delete("/memory/{memory_id}")
+def remove_memory_entry(memory_id: int, db: Session = Depends(get_db)):
+    if not delete_memory_entry(db, memory_id):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memory item not found")
+    return {"ok": True, "deleted_id": memory_id}
+
+
+@app.get("/memory/{memory_id}/relations", response_model=list[MemoryRelationRead])
+def get_memory_entry_relations(memory_id: int, db: Session = Depends(get_db)):
+    item = get_memory_entry(db, memory_id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memory item not found")
+    return list_memory_relations_for_entry(db, memory_id)
+
+
 @app.post("/memory/relations/", response_model=MemoryRelationRead)
 def add_memory_relation(payload: MemoryRelationCreate, db: Session = Depends(get_db)):
     source = db.query(MemoryEntry).filter(MemoryEntry.id == payload.source_id).first()
     target = db.query(MemoryEntry).filter(MemoryEntry.id == payload.target_id).first()
     if not source or not target:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Memory item not found")
+    if payload.source_id == payload.target_id:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="A memory item cannot relate to itself")
     return create_memory_relation(db, payload)
 
 
@@ -102,6 +171,14 @@ def get_course_detail(course_id: int, db: Session = Depends(get_db)):
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
     return item
+
+
+@app.get("/courses/{course_id}/notes", response_model=list[NoteRead])
+def get_course_notes(course_id: int, db: Session = Depends(get_db)):
+    item = get_course(db, course_id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Course not found")
+    return list_notes_by_course(db, course_id)
 
 
 @app.put("/courses/{course_id}", response_model=CourseRead)
@@ -168,6 +245,22 @@ def get_project_detail(project_id: int, db: Session = Depends(get_db)):
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
     return item
+
+
+@app.get("/projects/{project_id}/summary", response_model=ProjectSummary)
+def project_summary(project_id: int, db: Session = Depends(get_db)):
+    item = get_project_summary(db, project_id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    return item
+
+
+@app.get("/projects/{project_id}/tasks", response_model=list[TaskRead])
+def project_tasks(project_id: int, db: Session = Depends(get_db)):
+    item = get_project(db, project_id)
+    if not item:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    return list_tasks_by_project(db, project_id)
 
 
 @app.put("/projects/{project_id}", response_model=ProjectRead)

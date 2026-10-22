@@ -104,3 +104,32 @@ def test_memory_search_and_relations():
     results = client.get("/memory/search?query=tests")
     assert results.status_code == 200, results.text
     assert any(item["title"] == "Mémoire Python" for item in results.json())
+
+
+def test_business_logic_summary_for_project_and_course_notes():
+    course = client.post("/courses/", json={"name": "Business Logic", "description": "Validation projet"})
+    course_id = course.json()["id"]
+
+    note_one = client.post("/notes/", json={"title": "Note 1", "content": "Texte 1", "course_id": course_id})
+    note_two = client.post("/notes/", json={"title": "Note 2", "content": "Texte 2", "course_id": course_id})
+    assert note_one.status_code == 200, note_one.text
+    assert note_two.status_code == 200, note_two.text
+
+    project = client.post("/projects/", json={"name": "Projet métier", "description": "Validation", "status": "active"})
+    project_id = project.json()["id"]
+    client.post("/tasks/", json={"title": "Tâche 1", "description": "À faire", "status": "todo", "project_id": project_id})
+    client.post("/tasks/", json={"title": "Tâche 2", "description": "Terminée", "status": "done", "project_id": project_id})
+
+    summary = client.get(f"/projects/{project_id}/summary")
+    assert summary.status_code == 200, summary.text
+    summary_body = summary.json()
+    assert summary_body["project_id"] == project_id
+    assert summary_body["total_tasks"] == 2
+    assert summary_body["completed_tasks"] == 1
+    assert summary_body["pending_tasks"] == 1
+
+    course_notes = client.get(f"/courses/{course_id}/notes")
+    assert course_notes.status_code == 200, course_notes.text
+    course_note_titles = [item["title"] for item in course_notes.json()]
+    assert "Note 1" in course_note_titles
+    assert "Note 2" in course_note_titles

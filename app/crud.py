@@ -16,6 +16,10 @@ from app.schemas import (
 )
 
 
+def get_memory_entry(db: Session, memory_id: int):
+    return db.query(MemoryEntry).filter(MemoryEntry.id == memory_id).first()
+
+
 def create_memory_entry(db: Session, payload: MemoryEntryCreate) -> MemoryEntry:
     item = MemoryEntry(
         title=payload.title,
@@ -27,6 +31,28 @@ def create_memory_entry(db: Session, payload: MemoryEntryCreate) -> MemoryEntry:
     db.commit()
     db.refresh(item)
     return item
+
+
+def update_memory_entry(db: Session, memory_id: int, payload: MemoryEntryCreate):
+    item = get_memory_entry(db, memory_id)
+    if not item:
+        return None
+    item.title = payload.title
+    item.content = payload.content
+    item.memory_type = payload.memory_type
+    item.source = payload.source
+    db.commit()
+    db.refresh(item)
+    return item
+
+
+def delete_memory_entry(db: Session, memory_id: int):
+    item = get_memory_entry(db, memory_id)
+    if not item:
+        return False
+    db.delete(item)
+    db.commit()
+    return True
 
 
 def list_memory_entries(db: Session, skip: int = 0, limit: int = 100):
@@ -58,6 +84,21 @@ def create_memory_relation(db: Session, payload: MemoryRelationCreate) -> Memory
     db.commit()
     db.refresh(item)
     return item
+
+
+def list_memory_relations(db: Session, skip: int = 0, limit: int = 100):
+    return db.query(MemoryRelation).order_by(MemoryRelation.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def list_memory_relations_for_entry(db: Session, memory_id: int, skip: int = 0, limit: int = 100):
+    return (
+        db.query(MemoryRelation)
+        .filter(or_(MemoryRelation.source_id == memory_id, MemoryRelation.target_id == memory_id))
+        .order_by(MemoryRelation.created_at.desc())
+        .offset(skip)
+        .limit(limit)
+        .all()
+    )
 
 
 def create_course(db: Session, payload: CourseCreate) -> Course:
@@ -106,6 +147,10 @@ def create_note(db: Session, payload: NoteCreate) -> Note:
 
 def list_notes(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Note).order_by(Note.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def list_notes_by_course(db: Session, course_id: int, skip: int = 0, limit: int = 100):
+    return db.query(Note).filter(Note.course_id == course_id).order_by(Note.created_at.desc()).offset(skip).limit(limit).all()
 
 
 def get_note(db: Session, note_id: int):
@@ -186,6 +231,29 @@ def create_task(db: Session, payload: TaskCreate) -> Task:
 
 def list_tasks(db: Session, skip: int = 0, limit: int = 100):
     return db.query(Task).order_by(Task.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def list_tasks_by_project(db: Session, project_id: int, skip: int = 0, limit: int = 100):
+    return db.query(Task).filter(Task.project_id == project_id).order_by(Task.created_at.desc()).offset(skip).limit(limit).all()
+
+
+def get_project_summary(db: Session, project_id: int):
+    item = get_project(db, project_id)
+    if not item:
+        return None
+
+    tasks = list_tasks_by_project(db, project_id)
+    completed_tasks = sum(1 for task in tasks if str(task.status).lower() in {"done", "completed", "closed"})
+    pending_tasks = len(tasks) - completed_tasks
+
+    return {
+        "project_id": item.id,
+        "project_name": item.name,
+        "status": item.status,
+        "total_tasks": len(tasks),
+        "completed_tasks": completed_tasks,
+        "pending_tasks": pending_tasks,
+    }
 
 
 def get_task(db: Session, task_id: int):

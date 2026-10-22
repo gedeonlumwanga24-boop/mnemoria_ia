@@ -105,6 +105,15 @@ class ProjectRead(ProjectBase):
     model_config = ConfigDict(from_attributes=True)
 
 
+class ProjectSummary(BaseModel):
+    project_id: int
+    project_name: str
+    status: str
+    total_tasks: int
+    completed_tasks: int
+    pending_tasks: int
+
+
 class TaskBase(BaseModel):
     title: str
     description: str = ""
